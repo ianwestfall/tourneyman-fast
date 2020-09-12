@@ -8,4 +8,4 @@ RUN pipenv install -d --system
 
 WORKDIR /app
 
-CMD ["pipenv", "run", "webserver"]
+EXPOSE 8000

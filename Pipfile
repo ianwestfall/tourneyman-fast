@@ -11,9 +11,12 @@ python-multipart = "*"
 bcrypt = "*"
 sqlalchemy = "*"
 uvicorn = "*"
+alembic = "*"
+psycopg2-binary = "*"
 
 [requires]
 python_version = "3.7"
 
 [scripts]
+db_migrations = "alembic upgrade head"
 webserver = "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"

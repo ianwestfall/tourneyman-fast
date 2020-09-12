@@ -4,7 +4,6 @@ from api.routers import security
 from api.routers.security import get_current_active_user
 from api.schemas.security import User
 
-
 app = FastAPI(
     title='Tourneyman',
     description='Open-source tournament management software',
@@ -22,4 +21,4 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 @app.get('/users/me/items', description='Get the current user\'s items', tags=['tutorial'])
 async def read_own_items(current_user: User = Depends(get_current_active_user)):
-    return [{'item_id': 'Foo', 'owner': current_user.username}]
+    return [{'item_id': 'Foo', 'owner': current_user.email}]

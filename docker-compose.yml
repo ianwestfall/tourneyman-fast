@@ -6,13 +6,25 @@ services:
       - "5432:5432"
     restart: always
     environment:
+      POSTGRES_DB: tourneyman
       POSTGRES_USER: tourneyman
       POSTGRES_PASSWORD: password
   api:
     depends_on:
       - db
     build: .
+    command: bash -c "cd database && pipenv run db_migrations && cd ../ && pipenv run webserver"
     ports:
       - "8000:8000"
     volumes:
       - ./:/app
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db

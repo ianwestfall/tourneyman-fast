@@ -9,16 +9,24 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
-
-
-class User(BaseModel):
-    username: str
     email: Optional[str] = None
-    full_name: Optional[str] = None
-    disabled: Optional[bool] = None
 
 
-class UserInDB(User):
-    hashed_password: str
+class UserBase(BaseModel):
+    email: str
 
+
+class UserCreate(UserBase):
+    password: str
+
+
+class User(UserBase):
+    id: int
+    is_active: bool
+
+    class Config:
+        orm_mode = True
+
+
+class UserInDB(UserBase):
+    is_active: bool
