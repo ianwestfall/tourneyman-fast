@@ -13,6 +13,8 @@ sqlalchemy = "*"
 uvicorn = "*"
 alembic = "*"
 psycopg2-binary = "*"
+pytest = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"

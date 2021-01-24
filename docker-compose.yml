@@ -13,7 +13,7 @@ services:
     depends_on:
       - db
     build: .
-    command: bash -c "cd database && pipenv run db_migrations && cd ../ && pipenv run webserver"
+    command: bash -c "pipenv install && cd database && pipenv run db_migrations && cd ../ && pipenv run webserver"
     ports:
       - "8000:8000"
     volumes:

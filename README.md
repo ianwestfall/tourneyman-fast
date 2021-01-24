@@ -28,9 +28,9 @@ Checkout the project and run `docker-compose up` from `./`. You'll see:
 
 ## Tests
 ### Backend
-From `./` run `pytest`
+From `./` run `docker-compose run api pipenv run test`
 
 ### Frontend 
-From `./frontent`:
+From `./frontend`:
 - run `npm run test:unit` for unit tests
 - run `npm run test:e2e` for E2E tests

@@ -18,6 +18,7 @@ router = APIRouter()
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oath2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/token')
+oath2_scheme_allow_anonymous = OAuth2PasswordBearer(tokenUrl='/auth/token', auto_error=False)
 
 
 def verify_password(plaintext, hashed):
@@ -30,21 +31,22 @@ def get_password_hash(password):
 
 @router.post('/users/', response_model=schemas.security.User)
 def create_user(user: schemas.security.UserCreate, db: Session = Depends(get_db)):
-    db_user = User.by_email(db, user.email)
+    db_user = User.by_email(user.email, db)
     if db_user:
         raise HTTPException(status_code=400, detail='Email already registered')
     # Overwrite user.password with a hashed version
     user.password = get_password_hash(user.password)
-    return User.create(db, user)
+    return User.create(user, db)
 
 
+# noinspection PyTypeChecker
 @router.get('/users/', response_model=List[schemas.security.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return User.get_all(db, skip, limit)
 
 
 def get_user(db, email: str):
-    user = User.by_email(db, email)
+    user = User.by_email(email, db)
     return user
 
 
@@ -87,10 +89,23 @@ async def get_current_user(token: str = Depends(oath2_scheme), db: Session = Dep
     return user
 
 
+async def get_current_user_or_none(token: str = Depends(oath2_scheme_allow_anonymous), db: Session = Depends(get_db)):
+    if token:
+        return await get_current_user(token, db)
+    else:
+        return None
+
+
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
     if not current_user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Inactive user')
     return current_user
+
+
+async def get_current_active_user_or_none(current_user: User = Depends(get_current_user_or_none)):
+    if current_user:
+        return await get_current_active_user(current_user=current_user)
+    return None
 
 
 @router.post('/token', response_model=Token)
