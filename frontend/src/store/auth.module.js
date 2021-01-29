@@ -65,4 +65,8 @@ export default {
       state.status.loggedIn = false;
     },
   },
+  getters: {
+    loggedIn: (state) => state.status.loggedIn === true,
+    authenticatedUser: (state) => state.user,
+  },
 };

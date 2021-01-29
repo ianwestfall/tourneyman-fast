@@ -37,12 +37,13 @@ export default {
   name: 'App',
   computed: {
     loggedIn() {
-      return this.$store.state.auth.status.loggedIn;
+      return this.$store.getters['auth/loggedIn'];
     },
     authenticatedUser() {
       let username = null;
-      if (this.$store.state.auth.user) {
-        username = this.$store.state.auth.user.getUsername();
+      const user = this.$store.getters['auth/authenticatedUser'];
+      if (user) {
+        username = user.getUsername();
       }
 
       return username;
