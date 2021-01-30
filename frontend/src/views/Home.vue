@@ -9,6 +9,7 @@
           <b-tab title="My Tournaments" v-if="$store.getters['auth/loggedIn']">
             <tournament-table :isFilteredByUser="true"/>
           </b-tab>
+          <b-tab title="New Tournament"></b-tab>
         </b-tabs>
       </b-card>
     </div>

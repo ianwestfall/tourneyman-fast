@@ -11,6 +11,7 @@
       striped
       hover
       dark
+      responsive
       :items="provider"
       :fields="fields"
       :per-page="perPage"
@@ -41,7 +42,7 @@ export default {
           formatter: (s) => Tournament.convertStatusCode(s),
         },
       ],
-      perPage: 3,
+      perPage: 20,
       currentPage: 1,
       total: 0,
     };
