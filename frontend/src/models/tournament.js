@@ -26,4 +26,13 @@ export default class Tournament {
 
     return convertedStatus;
   }
+
+  asCreateRequestBody() {
+    return {
+      name: this.name,
+      organization: this.organization,
+      start_date: this.startDate.toISOString(),
+      public: this.public,
+    };
+  }
 }

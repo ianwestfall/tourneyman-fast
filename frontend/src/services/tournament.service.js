@@ -20,6 +20,7 @@ class TournamentService {
           limit,
         },
         headers: authHeader(),
+        validateStatus: (status) => status === 200,
       },
     );
     const res = response.data;
@@ -34,6 +35,18 @@ class TournamentService {
     ));
 
     return res;
+  }
+
+  static async createTournament(tournament) {
+    const endpoint = '/tournaments';
+
+    const response = await axios.post(
+      API_URL + endpoint, tournament.asCreateRequestBody(), {
+        headers: authHeader(),
+        validateStatus: (status) => status === 201,
+      },
+    );
+    return response.data;
   }
 }
 

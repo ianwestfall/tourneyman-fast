@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <b-container fluid>
     <div>
       <b-navbar toggleable="lg" type="dark" class="bg-dark">
         <b-navbar-brand to="/">TourneyMan</b-navbar-brand>
@@ -29,14 +30,19 @@
       </b-navbar>
     </div>
     <div class="view-container">
+      <alerts />
       <router-view/>
     </div>
+  </b-container>
   </div>
 </template>
 
 <script>
+import Alerts from '@/components/alerts/Alerts.vue';
+
 export default {
   name: 'App',
+  components: { Alerts },
   computed: {
     loggedIn() {
       return this.$store.getters['auth/loggedIn'];

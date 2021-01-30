@@ -59,7 +59,10 @@ export default {
         this.total = response.total;
         return response.items;
       } catch (error) {
-        console.error(error);
+        this.$store.dispatch(
+          'alerts/raiseError',
+          `Failed to load tournaments: ${error.toString()}`,
+        );
         return [];
       }
     },
