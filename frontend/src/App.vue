@@ -28,7 +28,9 @@
         </b-collapse>
       </b-navbar>
     </div>
-    <router-view/>
+    <div class="view-container">
+      <router-view/>
+    </div>
   </div>
 </template>
 
@@ -64,4 +66,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
+.view-container {
+  padding: 10px;
+}
 </style>

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic.main import BaseModel
 
@@ -28,3 +28,8 @@ class Tournament(TournamentBase):
 
     class Config:
         orm_mode = True
+
+
+class TournamentList(BaseModel):
+    total: int
+    items: List[Tournament]

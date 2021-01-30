@@ -5,7 +5,7 @@ from fastapi import status
 from sqlalchemy.orm import Session
 
 from api.routers.security import get_current_active_user, get_current_active_user_or_none
-from api.schemas.tournament import Tournament as TournamentSchema, TournamentCreate, TournamentUpdate
+from api.schemas.tournament import Tournament as TournamentSchema, TournamentCreate, TournamentUpdate, TournamentList
 from database.db import get_db
 from database.models import User, Tournament
 
@@ -25,16 +25,21 @@ async def create_tournament(
 
 
 # noinspection PyTypeChecker
-@router.get('/', response_model=List[TournamentSchema])
+@router.get('/', response_model=TournamentList)
 async def get_tournaments(
-        skip: int = 0, limit: int = 100,
+        is_filtered_by_user: bool = False, skip: int = 0, limit: int = 100,
         current_user: Optional[User] = Depends(get_current_active_user_or_none),
         db: Session = Depends(get_db),
 ):
     """
     Return all public tournaments and any private tournaments owned by the current_user, if present
     """
-    return Tournament.get_all_visible(current_user, db, skip, limit)
+    tournament_count = len(Tournament.get_all_visible(current_user, db, is_filtered_by_user))
+    tournaments = Tournament.get_all_visible(current_user, db, is_filtered_by_user, skip, limit)
+    return {
+        'total': tournament_count,
+        'items': tournaments,
+    }
 
 
 @router.get('/{tournament_id}', response_model=TournamentSchema)

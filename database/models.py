@@ -94,15 +94,19 @@ class Tournament(Base):
         return query.first()
 
     @staticmethod
-    def get_all_visible(user: User, db: Session, skip: int = 0, limit: int = 100):
+    def get_all_visible(user: User, db: Session, is_filtered_by_user: bool = False, skip: int = 0, limit: int = 100):
         query = db.query(Tournament)
 
         if user:
-            # All public or owned by user
-            query = query.filter(or_(
-                Tournament.public.is_(True),
-                Tournament.owner_id == user.id,
-            ))
+            if is_filtered_by_user:
+                # Only this users tournaments
+                query = query.filter(Tournament.owner_id == user.id)
+            else:
+                # All public or owned by this user
+                query = query.filter(or_(
+                    Tournament.public.is_(True),
+                    Tournament.owner_id == user.id,
+                ))
         else:
             query = query.filter(Tournament.public.is_(True))
 
