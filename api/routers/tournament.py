@@ -1,15 +1,34 @@
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import Depends, APIRouter, HTTPException
 from fastapi import status
 from sqlalchemy.orm import Session
 
 from api.routers.security import get_current_active_user, get_current_active_user_or_none
-from api.schemas.tournament import Tournament as TournamentSchema, TournamentCreate, TournamentUpdate, TournamentList
+from api.schemas.tournament import TournamentDetail as TournamentSchema, TournamentCreate, TournamentUpdate, \
+    TournamentList
 from database.db import get_db
 from database.models import User, Tournament
 
-router = APIRouter()
+router = APIRouter(prefix='/tournaments', tags=['tournament'])
+
+
+async def visible_tournament(
+        tournament_id: int,
+        current_user: Optional[User] = Depends(get_current_active_user_or_none),
+        db: Session = Depends(get_db),
+) -> Optional[Tournament]:
+    return Tournament.by_id_visible(tournament_id, current_user, db)
+
+
+async def alterable_tournament(
+        tournament: Tournament = Depends(visible_tournament),
+        current_user: Optional[User] = Depends(get_current_active_user_or_none),
+) -> Optional[Tournament]:
+    if current_user and tournament and tournament.owner_id == current_user.id:
+        return tournament
+    else:
+        return None
 
 
 @router.post('/', response_model=TournamentSchema, status_code=status.HTTP_201_CREATED)
@@ -45,13 +64,11 @@ async def get_tournaments(
 @router.get('/{tournament_id}', response_model=TournamentSchema)
 async def get_tournament(
         tournament_id: int,
-        current_user: Optional[User] = Depends(get_current_active_user_or_none),
-        db: Session = Depends(get_db),
+        tournament: Tournament = Depends(visible_tournament),
 ):
     """
     Gets the tournament with the given ID, if it exists and is visible to the current user
     """
-    tournament = Tournament.by_id_visible(tournament_id, current_user, db)
     if tournament:
         return tournament
     else:
@@ -64,17 +81,17 @@ async def get_tournament(
 @router.put('/{tournament_id}', response_model=TournamentSchema)
 async def update_tournament(
         tournament_id: int,
-        tournament: TournamentUpdate,
+        tournament_data: TournamentUpdate,
+        tournament: Tournament = Depends(alterable_tournament),
         current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db),
 ):
     """
     Updates the desired tournament if the current user owns it
     """
-    db_tournament = Tournament.by_id_visible(tournament_id, current_user, db)
-    if db_tournament and db_tournament.owner == current_user:
-        db_tournament.update(tournament, db)
-        return db_tournament
+    if tournament:
+        tournament.update(tournament_data, db)
+        return tournament
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -85,15 +102,15 @@ async def update_tournament(
 @router.delete('/{tournament_id}')
 async def delete_tournament(
         tournament_id: int,
+        tournament: Tournament = Depends(alterable_tournament),
         current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db),
 ):
     """
     Deletes the desired tournament if the current user owns it
     """
-    db_tournament = Tournament.by_id_visible(tournament_id, current_user, db)
-    if db_tournament and db_tournament.owner == current_user:
-        db_tournament.delete(db)
+    if tournament:
+        tournament.delete(db)
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

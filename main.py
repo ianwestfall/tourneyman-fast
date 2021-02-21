@@ -4,7 +4,7 @@ from logging.config import fileConfig
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import security, tournament
+from api.routers import security, tournament, stage, competitor
 
 fileConfig('logging.conf', disable_existing_loggers=False)
 
@@ -30,4 +30,6 @@ app.add_middleware(
 
 
 app.include_router(security.router, prefix='/auth', tags=['authentication'])
-app.include_router(tournament.router, prefix='/tournaments', tags=['tournament'])
+app.include_router(tournament.router)
+app.include_router(stage.router)
+app.include_router(competitor.router)

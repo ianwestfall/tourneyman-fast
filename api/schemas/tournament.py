@@ -4,6 +4,7 @@ from typing import Optional, List
 from pydantic.main import BaseModel
 
 from api.schemas.security import User
+from api.schemas.stage import Stage
 
 
 class TournamentBase(BaseModel):
@@ -21,7 +22,7 @@ class TournamentUpdate(TournamentBase):
     pass
 
 
-class Tournament(TournamentBase):
+class TournamentBasic(TournamentBase):
     id: int
     status: int
     owner: User
@@ -30,6 +31,10 @@ class Tournament(TournamentBase):
         orm_mode = True
 
 
+class TournamentDetail(TournamentBasic):
+    stages: List[Stage]
+
+
 class TournamentList(BaseModel):
     total: int
-    items: List[Tournament]
+    items: List[TournamentBasic]
