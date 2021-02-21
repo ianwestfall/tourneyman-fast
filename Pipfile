@@ -13,8 +13,11 @@ sqlalchemy = "*"
 uvicorn = "*"
 alembic = "*"
 psycopg2-binary = "*"
-pytest = "*"
 requests = "*"
+
+[dev-packages]
+pytest = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.7"

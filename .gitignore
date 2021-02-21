@@ -3,3 +3,5 @@ __pycache__/
 
 # Don't put secrets into the repo!
 settings.py
+
+.coverage

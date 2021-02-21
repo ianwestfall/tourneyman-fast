@@ -28,7 +28,7 @@ Checkout the project and run `docker-compose up` from `./`. You'll see:
 
 ## Tests
 ### Backend
-From `./` run `docker-compose run api pipenv run test`
+From `./` run `docker-compose run api pipenv run pytest`
 
 ### Frontend 
 From `./frontend`:
