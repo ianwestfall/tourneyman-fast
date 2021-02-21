@@ -28,7 +28,7 @@ jobs:
           POSTGRES_USER: tourneyman
           POSTGRES_PASSWORD: password
         ports:
-          - "5432: 5432"
+          - "5432:5432"
     env:
       DB_HOST: localhost
       
