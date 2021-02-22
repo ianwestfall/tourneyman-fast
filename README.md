@@ -1,4 +1,5 @@
-# tourneyman-fast
+# tourneyman-fast 
+![Backend Tests](https://github.com/ianwestfall/tourneyman-fast/actions/workflows/main.yml/badge.svg?branch=master)
 A basic tournament management application built with:
 - Backend 
   - [Python 3.7](https://www.python.org/)
