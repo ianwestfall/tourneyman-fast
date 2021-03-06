@@ -46,7 +46,7 @@ class TournamentService {
         validateStatus: (status) => status === 201,
       },
     );
-    return response.data;
+    return Tournament.fromCreateResponseBody(response.data);
   }
 }
 

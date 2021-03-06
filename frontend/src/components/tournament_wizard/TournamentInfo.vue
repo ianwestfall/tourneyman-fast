@@ -1,5 +1,5 @@
 <template>
-<b-row>
+  <b-row>
     <b-col col xl="4" lg="8">
       <b-form @submit.prevent="onSubmit" @reset="onReset" v-if="show">
         <b-form-group
@@ -67,6 +67,7 @@ export default {
       show: true,
       message: '',
       updating: false,
+      tournamentCreated: false,
     };
   },
   methods: {
@@ -74,6 +75,14 @@ export default {
       return this.tournamentName && this.tournamentStartDate;
     },
     async onSubmit() {
+      if (this.tournamentCreated) {
+        // Navigate to the next page without further action if the tournament has already been
+        // created, like when a user navigates back to this page from a later step.
+        // TODO: Perform an update if anything has changed.
+        this.$emit('next-page');
+        return;
+      }
+
       // Lock the button so users can't click it twice on accident
       this.updating = true;
 
@@ -95,8 +104,10 @@ export default {
             `Successfully created a new tournament with id ${tournament.id}!`,
           );
 
+          this.tournamentCreated = true;
+
           // Navigate to the next page
-          // TODO
+          this.$emit('next-page', tournament);
         } catch (error) {
           this.$store.dispatch(
             'alerts/raiseError',
