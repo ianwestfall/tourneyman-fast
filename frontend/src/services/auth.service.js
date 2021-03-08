@@ -5,6 +5,12 @@ const API_URL = process.env.VUE_APP_API_URL;
 
 class AuthService {
   static async login(user) {
+    if (!user) {
+      throw new TypeError('user must not be null/undefined');
+    } else if (!user.email || !user.password) {
+      throw new TypeError('user must have an email and a password');
+    }
+
     const endpoint = '/auth/token';
     const data = new FormData();
     data.append('username', user.email);
@@ -18,19 +24,25 @@ class AuthService {
 
     if (response.data.access_token) {
       const safeUser = new User(user.email);
-      localStorage.setItem('user', JSON.stringify(safeUser));
-      localStorage.setItem('userToken', JSON.stringify(response.data));
+      window.localStorage.setItem('user', JSON.stringify(safeUser));
+      window.localStorage.setItem('userToken', JSON.stringify(response.data));
     }
 
     return response.data;
   }
 
   static logout() {
-    localStorage.removeItem('user');
-    localStorage.removeItem('userToken');
+    window.localStorage.removeItem('user');
+    window.localStorage.removeItem('userToken');
   }
 
-  static register(user) {
+  static async register(user) {
+    if (!user) {
+      throw new TypeError('user must not be null/undefined');
+    } else if (!user.email || !user.password) {
+      throw new TypeError('user must have an email and a password');
+    }
+
     const endpoint = '/auth/users';
     return axios.post(API_URL + endpoint, {
       email: user.email,

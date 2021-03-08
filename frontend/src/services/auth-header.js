@@ -1,5 +1,5 @@
 export default function authHeader() {
-  const userToken = JSON.parse(localStorage.getItem('userToken'));
+  const userToken = JSON.parse(window.localStorage.getItem('userToken'));
   let headers = {};
 
   if (userToken && userToken.access_token) {
