@@ -13,7 +13,12 @@
         label="Minimum pool size:"
         description="What's the smallest pool size? All pools will be this size or 1 larger."
       >
-        <b-form-input id="minimum-pool-size" type="number" required></b-form-input>
+        <b-form-input
+          id="minimum-pool-size"
+          type="number"
+          required
+          v-model="stage.params.minimum_pool_size"
+        ></b-form-input>
       </b-form-group>
     </div>
     <div v-if="stage.type === 1 || stage.type === 2">
@@ -22,7 +27,7 @@
         label="Seeding type:"
         description="Should the bracket take seed values into account or be randomized?"
       >
-        <b-form-radio-group required>
+        <b-form-radio-group required v-model="stage.params.seeded">
           <b-form-radio value="1">Seeded</b-form-radio>
           <b-form-radio value="0">Randomized</b-form-radio>
         </b-form-radio-group>

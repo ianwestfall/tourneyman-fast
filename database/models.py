@@ -1,8 +1,8 @@
 import enum
 from collections import defaultdict
-from typing import Optional, List
+from typing import Optional, List, Dict
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, CheckConstraint, ForeignKey, or_
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, CheckConstraint, ForeignKey, or_, JSON
 from sqlalchemy.orm import Session, relationship, backref
 
 from api.schemas.competitor import CompetitorCreate, CompetitorUpdate
@@ -139,6 +139,9 @@ class Tournament(Base):
         db.commit()
 
     def get_last_stage(self):
+        """
+        Gets the last stage, if any exist
+        """
         return self.stages[-1] if self.stages else None
 
 
@@ -226,6 +229,17 @@ class Stage(Base):
 
             return second in valid_orders[first]
 
+        @classmethod
+        def parse_params(cls, stage_type, params) -> Dict:
+            parsed_params = {}
+
+            if stage_type == cls.pool:
+                parsed_params['minimum_pool_size'] = int(params['minimum_pool_size'])
+            else:
+                parsed_params['seeded'] = bool(params['seeded'])
+
+            return parsed_params
+
     class StageStatus(enum.IntEnum):
         pending = 0
         active = 1
@@ -237,6 +251,7 @@ class Stage(Base):
     ordinal = Column(Integer, nullable=False)
     type = Column(Integer, nullable=False)
     status = Column(Integer, nullable=False, default=StageStatus.pending)
+    params = Column(JSON, nullable=False)
 
     pools = relationship('Pool', back_populates='stage', cascade='all, delete', passive_deletes=True,
                          order_by='Pool.ordinal')
@@ -248,6 +263,10 @@ class Stage(Base):
         CheckConstraint(f'type IN ({",".join(map(str, type_options))})', name='valid_type'),
         CheckConstraint(f'status IN ({",".join(map(str, status_options))})', name='valid_status'),
     )
+
+    @property
+    def parsed_params(self):
+        return Stage.StageType.parse_params(self.type, self.params)
 
     @staticmethod
     def create(tournament: Tournament, stage: StageCreate, db: Session):
@@ -267,6 +286,7 @@ class Stage(Base):
             tournament_id=tournament.id,
             ordinal=len(tournament.stages),
             type=stage.type,
+            params=stage.params,
         )
         db.add(db_stage)
         db.commit()

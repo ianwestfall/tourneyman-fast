@@ -1,7 +1,7 @@
 import axios from 'axios';
-import Tournament from '../models/tournament';
-import User from '../models/user';
-import authHeader from './auth-header';
+import Tournament from '@/models/tournament';
+import User from '@/models/user';
+import authHeader from '@/services/auth-header';
 
 const API_URL = process.env.VUE_APP_API_URL;
 

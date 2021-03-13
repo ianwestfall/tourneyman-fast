@@ -1,8 +1,11 @@
+from typing import Dict
+
 from pydantic import BaseModel
 
 
 class StageBase(BaseModel):
     type: int
+    params: Dict
 
 
 class StageCreate(StageBase):

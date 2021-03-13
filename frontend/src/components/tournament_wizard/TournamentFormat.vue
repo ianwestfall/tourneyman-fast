@@ -40,6 +40,7 @@
 import Tournament from '@/models/tournament';
 import Stage from '@/models/stage';
 import StageEditor from '@/components/tournament_wizard/StageEditor.vue';
+import StageService from '@/services/stage.service';
 
 export default {
   components: { StageEditor },
@@ -51,19 +52,20 @@ export default {
     return {
       updating: false,
       show: true,
+      stagesCreated: false,
     };
   },
   methods: {
     addStage() {
       this.tournament.stages.push(
-        new Stage(null, this.tournament.stages.length, null, null),
+        new Stage(null, this.tournament.stages.length, null, null, {}),
       );
     },
     removeStage() {
       this.tournament.stages.pop();
     },
     onReset() {
-      this.tournament.stages = [new Stage(null, 0, null, null)];
+      this.tournament.stages = [new Stage(null, 0, null, null, {})];
 
       this.show = false;
       this.$nextTick(() => {
@@ -73,7 +75,26 @@ export default {
     async onSubmit() {
       this.updating = true;
       // Make the call to create the stages on the tournament.
-      // TODO:
+      try {
+        const stages = await StageService.createStages(this.tournament, this.tournament.stages);
+
+        this.$store.dispatch(
+          'alerts/raiseInfo',
+          `Successfully created ${stages.length} new stage(s) for tournament with id ${this.tournament.id}`,
+        );
+
+        this.stagesCreated = true;
+
+        // Navigate to the next page
+        this.$emit('next-page', stages);
+      } catch (error) {
+        this.$store.dispatch(
+          'alerts/raiseError',
+          `Failed to create new stage(s): ${error.toString()}`,
+        );
+      } finally {
+        this.updating = false;
+      }
     },
   },
   computed: {
@@ -88,7 +109,7 @@ export default {
   },
   created() {
     if (this.tournament.stages.length === 0) {
-      this.tournament.stages.push(new Stage(null, 0, null, null));
+      this.tournament.stages.push(new Stage(null, 0, null, null, {}));
     }
   },
 };

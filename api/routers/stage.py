@@ -17,15 +17,16 @@ async def get_stage_by_id(stage_id: int, db: Session = Depends(get_db)) -> Optio
     return Stage.by_id(stage_id, db)
 
 
-@router.post('/', response_model=StageSchema, status_code=status.HTTP_201_CREATED)
+@router.post('/', response_model=List[StageSchema], status_code=status.HTTP_201_CREATED)
 async def create_stage(
         tournament_id: int,
-        stage: StageCreate,
+        stages: List[StageCreate],
         tournament: Tournament = Depends(alterable_tournament),
         db: Session = Depends(get_db),
 ):
     """
-    Creates a new stage owned by the given tournament_id if the current_user owns it
+    Creates new stages owned by the given tournament_id if the current_user owns it and the stages are valid to be
+    appended to the tournament's existing stages, if any.
     """
     if not tournament:
         raise HTTPException(
@@ -33,7 +34,7 @@ async def create_stage(
             detail=f'No tournament found with id {tournament_id}',
         )
     try:
-        return Stage.create(tournament, stage, db)
+        return [Stage.create(tournament, stage, db) for stage in stages]
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
