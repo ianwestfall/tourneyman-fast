@@ -14,10 +14,12 @@ uvicorn = "*"
 alembic = "*"
 psycopg2-binary = "*"
 requests = "*"
+importlib-metadata = "~=1.0"
 
 [dev-packages]
 pytest = "*"
 pytest-cov = "*"
+factory-boy = "*"
 
 [requires]
 python_version = "3.7"
