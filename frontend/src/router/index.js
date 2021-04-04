@@ -53,6 +53,16 @@ const routes = [
       title: 'Profile',
     },
   },
+  {
+    path: '/tournament/:id',
+    name: 'Tournament Detail',
+    component: () => import(/* webpackChunkName: "tournament detail" */ '../views/TournamentDetail.vue'),
+    props: (route) => ({ id: parseInt(route.params.id, 10) }),
+    meta: {
+      auth: false,
+      title: 'Tournament Detail',
+    },
+  },
 ];
 
 const router = new VueRouter({

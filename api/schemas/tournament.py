@@ -3,6 +3,7 @@ from typing import Optional, List
 
 from pydantic.main import BaseModel
 
+from api.schemas.competitor import Competitor
 from api.schemas.security import User
 from api.schemas.stage import Stage
 
@@ -33,8 +34,13 @@ class TournamentBasic(TournamentBase):
 
 class TournamentDetail(TournamentBasic):
     stages: List[Stage]
+    competitors: List[Competitor]
 
 
 class TournamentList(BaseModel):
     total: int
     items: List[TournamentBasic]
+
+
+class Status(BaseModel):
+    status: int

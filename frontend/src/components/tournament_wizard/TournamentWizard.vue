@@ -2,7 +2,7 @@
   <b-card no-body>
     <b-tabs pills card vertical v-model="currentTabIndex" @activate-tab="checkActiveTab">
       <b-tab title="Basic Info">
-        <tournament-info @next-page="updateBasicInfo"/>
+        <tournament-info :tournament="tournament" @next-page="updateBasicInfo"/>
       </b-tab>
       <b-tab title="Tournament Format">
         <tournament-format :tournament="tournament" @next-page="updateFormat"/>
@@ -17,8 +17,10 @@
 <script>
 import Tournament from '@/models/tournament';
 import Stage from '@/models/stage';
+import Competitor from '@/models/competitor';
 import TournamentInfo from '@/components/tournament_wizard/TournamentInfo.vue';
 import TournamentFormat from '@/components/tournament_wizard/TournamentFormat.vue';
+import TournamentService from '@/services/tournament.service';
 import TournamentCompetitors from './TournamentCompetitors.vue';
 
 export default {
@@ -56,9 +58,18 @@ export default {
     updateFormat(stages) {
       // stages is a list of stage model objects returned by the POST handler.
       this.tournament.stages = stages;
+      if (this.tournament.competitors.length === 0) {
+        this.tournament.competitors.push(new Competitor());
+      }
       this.nextPage();
     },
-    updateCompetitors() {},
+    async updateCompetitors(competitors) {
+      this.tournament.competitors = competitors;
+
+      // Move the tournament out of pending and into ready
+      this.tournament = await TournamentService.updateTournamentStatus(this.tournament, 1);
+      this.$router.push({ name: 'Tournament Detail', params: { id: this.tournament.id } });
+    },
     isTabActive(tabIndex) {
       return tabIndex === this.currentTabIndex;
     },

@@ -7,14 +7,23 @@
           label-for="tournament-name"
           description="What will people call your tournament?"
         >
-          <b-form-input id="tournament-name" v-model="tournamentName" required></b-form-input>
+          <b-form-input
+            id="tournament-name"
+            v-model="tournament.name"
+            required
+            :disabled="tournament.status > 1">
+          </b-form-input>
         </b-form-group>
         <b-form-group
           label="Organization:"
           label-for="tournament-org"
           description="Whose tournament is this?"
         >
-          <b-form-input id="tournament-org" v-model="tournamentOrg"></b-form-input>
+          <b-form-input
+            id="tournament-org"
+            v-model="tournament.organization"
+            :disabled="tournament.status > 1">
+          </b-form-input>
         </b-form-group>
         <b-form-group
           label="Start date:"
@@ -23,9 +32,10 @@
         >
           <b-form-datepicker
             id="tournament-start-date"
-            v-model="tournamentStartDate"
+            v-model="tournament.startDate"
             required
             value-as-date
+            :disabled="tournament.status > 1"
           >
           </b-form-datepicker>
         </b-form-group>
@@ -36,13 +46,14 @@
         >
           <b-form-checkbox
             id="tournament-public"
-            v-model="tournamentPublic"
+            v-model="tournament.public"
+            :disabled="tournament.status > 1"
           ></b-form-checkbox>
         </b-form-group>
-        <b-button-group>
-          <b-button type="reset" variant="danger">Reset</b-button>
+        <b-button-group v-if="tournament.status < 2">
+          <b-button type="reset" variant="danger" v-if="!tournamentCreated">Reset</b-button>
           <b-button type="submit" variant="primary" :disabled="updating">
-            <span v-if="!updating">Next</span>
+            <span v-if="!updating">{{ tournamentCreated ? 'Update': 'Next' }}</span>
             <b-spinner small label="Spinning" v-if="updating"></b-spinner>
           </b-button>
         </b-button-group>
@@ -58,53 +69,53 @@ import TournamentService from '@/services/tournament.service';
 
 export default {
   name: 'TournamentInfo',
+  props: {
+    tournament: {
+      type: Tournament,
+      default: () => new Tournament(),
+    },
+  },
   data() {
     return {
-      tournamentName: null,
-      tournamentOrg: null,
-      tournamentStartDate: null,
-      tournamentPublic: false,
       show: true,
       message: '',
       updating: false,
-      tournamentCreated: false,
     };
   },
   methods: {
     validate() {
-      return this.tournamentName && this.tournamentStartDate;
+      return this.tournament.name && this.tournament.startDate;
     },
     async onSubmit() {
-      if (this.tournamentCreated) {
-        // Navigate to the next page without further action if the tournament has already been
-        // created, like when a user navigates back to this page from a later step.
-        // TODO: Perform an update if anything has changed.
-        this.$emit('next-page');
-        return;
-      }
-
       // Lock the button so users can't click it twice on accident
       this.updating = true;
 
-      if (this.validate()) {
-        // Create a new tournament
+      // Make sure the data is valid
+      if (!this.validate()) {
+        this.message = 'Tournament name and start date are required';
+      } else if (this.tournamentCreated) {
+        // Update an existing tournament
         try {
-          const tournamentModel = new Tournament(
-            null,
-            this.tournamentName,
-            this.tournamentOrg,
-            this.tournamentStartDate,
-            this.tournamentPublic,
-            null,
-            null,
-          );
-          const tournament = await TournamentService.createTournament(tournamentModel);
+          const tournament = await TournamentService.updateTournament(this.tournament);
           this.$store.dispatch(
             'alerts/raiseInfo',
             `Successfully created a new tournament with id ${tournament.id}!`,
           );
-
-          this.tournamentCreated = true;
+          this.$emit('next-page', tournament);
+        } catch (error) {
+          this.$store.dispatch(
+            'alerts/raiseError',
+            `Failed to update tournament ${this.tournament.id}: ${error.toString()}`,
+          );
+        }
+      } else {
+        // Create a new tournament
+        try {
+          const tournament = await TournamentService.createTournament(this.tournament);
+          this.$store.dispatch(
+            'alerts/raiseInfo',
+            `Successfully created a new tournament with id ${tournament.id}!`,
+          );
 
           // Navigate to the next page
           this.$emit('next-page', tournament);
@@ -113,19 +124,17 @@ export default {
             'alerts/raiseError',
             `Failed to create a new tournament: ${error.toString()}`,
           );
-        } finally {
-          this.updating = false;
         }
-      } else {
-        this.message = 'Tournament name and start date are required';
-        this.updating = false;
       }
+
+      this.updating = false;
     },
     onReset() {
-      this.tournamentName = null;
-      this.tournamentOrg = null;
-      this.tournamentStartDate = null;
-      this.tournamentPublic = false;
+      this.tournament.name = undefined;
+      this.tournament.organization = undefined;
+      this.tournament.startDate = undefined;
+      this.tournament.public = false;
+
       this.message = '';
 
       // This gets rid of the browser validation state
@@ -133,6 +142,11 @@ export default {
       this.$nextTick(() => {
         this.show = true;
       });
+    },
+  },
+  computed: {
+    tournamentCreated() {
+      return !!this.tournament.id;
     },
   },
 };

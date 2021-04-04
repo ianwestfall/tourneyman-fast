@@ -8,7 +8,7 @@
           small
           sticky-header="500px"
           dark
-          :items="competitors"
+          :items="tournament.competitors"
           :fields="fields"
         >
           <template #head(index)>
@@ -49,9 +49,9 @@
         <br />
         <br />
         <b-button-group>
-          <b-button type="reset" variant="danger">Reset</b-button>
+          <b-button type="reset" variant="danger" v-if="!competitorsCreated">Reset</b-button>
           <b-button type="submit" variant="primary" :disabled="updating">
-            <span v-if="!updating">Finish</span>
+            <span v-if="!updating">{{ competitorsCreated ? 'Update' : 'Finish' }}</span>
             <b-spinner small label="Spinning" v-if="updating"></b-spinner>
           </b-button>
         </b-button-group>
@@ -76,6 +76,7 @@
 <script>
 import Tournament from '@/models/tournament';
 import Competitor from '@/models/competitor';
+import CompetitorService from '@/services/competitor.service';
 
 export default {
   name: 'TournamentCompetitors',
@@ -87,14 +88,38 @@ export default {
       updating: false,
       show: true,
       fields: ['index', 'firstName', 'lastName', 'organization', 'location', 'remove'],
-      competitors: [new Competitor('ian', 'west', 'ckdf', 'dc')],
     };
   },
   methods: {
-    onSubmit() {},
-    onReset() {},
+    async onSubmit() {
+      this.updating = true;
+      try {
+        const competitors = await CompetitorService.createCompetitors(
+          this.tournament,
+          this.tournament.competitors,
+        );
+
+        // Navigate to the next page
+        this.$emit('next-page', competitors);
+      } catch (error) {
+        this.$store.dispatch(
+          'alerts/raiseError',
+          `Failed to create new competitor(s): ${error.toString()}`,
+        );
+      } finally {
+        this.updating = false;
+      }
+    },
+    onReset() {
+      this.tournament.competitors = [new Competitor()];
+
+      this.show = false;
+      this.$nextTick(() => {
+        this.show = true;
+      });
+    },
     addCompetitor() {
-      this.competitors.push(new Competitor());
+      this.tournament.competitors.push(new Competitor());
 
       this.$nextTick(() => {
         // Give Vue a chance to create the new table row, then scroll to it.
@@ -103,7 +128,14 @@ export default {
       });
     },
     removeCompetitor(index) {
-      this.competitors.splice(index, 1);
+      this.tournament.competitors.splice(index, 1);
+    },
+  },
+  computed: {
+    competitorsCreated() {
+      return this.tournament
+        && this.tournament.competitors
+        && this.tournament.competitors.some((competitor) => !!competitor.id);
     },
   },
 };

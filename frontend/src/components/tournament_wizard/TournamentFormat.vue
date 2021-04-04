@@ -25,9 +25,9 @@
         </b-list-group>
         <br />
         <b-button-group>
-          <b-button type="reset" variant="danger">Reset</b-button>
+          <b-button type="reset" variant="danger" v-if="!stagesCreated">Reset</b-button>
           <b-button type="submit" variant="primary" :disabled="updating">
-            <span v-if="!updating">Next</span>
+            <span v-if="!updating">{{ stagesCreated ? 'Update' : 'Next' }}</span>
             <b-spinner small label="Spinning" v-if="updating"></b-spinner>
           </b-button>
         </b-button-group>
@@ -52,7 +52,6 @@ export default {
     return {
       updating: false,
       show: true,
-      stagesCreated: false,
     };
   },
   methods: {
@@ -74,43 +73,46 @@ export default {
     },
     async onSubmit() {
       this.updating = true;
-      // Make the call to create the stages on the tournament.
-      try {
-        const stages = await StageService.createStages(this.tournament, this.tournament.stages);
 
-        this.$store.dispatch(
-          'alerts/raiseInfo',
-          `Successfully created ${stages.length} new stage(s) for tournament with id ${this.tournament.id}`,
-        );
+      if (this.stagesCreated) {
+        // Update existing stages, create new ones, delete missing ones.
+      } else {
+        // Make the call to create the stages on the tournament.
+        try {
+          const stages = await StageService.createStages(this.tournament, this.tournament.stages);
 
-        this.stagesCreated = true;
+          this.$store.dispatch(
+            'alerts/raiseInfo',
+            `Successfully created ${stages.length} new stage(s) for tournament with id ${this.tournament.id}`,
+          );
 
-        // Navigate to the next page
-        this.$emit('next-page', stages);
-      } catch (error) {
-        this.$store.dispatch(
-          'alerts/raiseError',
-          `Failed to create new stage(s): ${error.toString()}`,
-        );
-      } finally {
-        this.updating = false;
+          // Navigate to the next page
+          this.$emit('next-page', stages);
+        } catch (error) {
+          this.$store.dispatch(
+            'alerts/raiseError',
+            `Failed to create new stage(s): ${error.toString()}`,
+          );
+        }
       }
+
+      this.updating = false;
     },
   },
   computed: {
     canAddAnotherStage() {
-      if (!this.tournament || this.tournament.stages.length === 0) {
+      if (!this.tournament || !this.tournament.stages || this.tournament.stages.length === 0) {
         return false;
       }
 
       const stageType = this.tournament.stages[this.tournament.stages.length - 1].type;
       return stageType === Stage.types[0].value;
     },
-  },
-  created() {
-    if (this.tournament.stages.length === 0) {
-      this.tournament.stages.push(new Stage(null, 0, null, null, {}));
-    }
+    stagesCreated() {
+      return this.tournament
+        && this.tournament.stages
+        && this.tournament.stages.some((stage) => !!stage.id);
+    },
   },
 };
 </script>

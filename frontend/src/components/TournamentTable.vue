@@ -15,7 +15,8 @@
       :items="provider"
       :fields="fields"
       :per-page="perPage"
-      :current-page="currentPage"></b-table>
+      :current-page="currentPage"
+      @row-clicked="rowClicked"></b-table>
   </div>
 </template>
 
@@ -65,6 +66,9 @@ export default {
         );
         return [];
       }
+    },
+    rowClicked(row) {
+      this.$router.push({ name: 'Tournament Detail', params: { id: row.id } });
     },
   },
   mounted() {

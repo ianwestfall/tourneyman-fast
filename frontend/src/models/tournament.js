@@ -1,16 +1,18 @@
 import Stage from '@/models/stage';
+import Competitor from './competitor';
 
 export default class Tournament {
   constructor(id, name, organization, startDate, pub, status, owner,
-    stages) {
+    stages, competitors) {
     this.id = id;
     this.name = name;
     this.organization = organization;
     this.startDate = startDate;
-    this.public = pub;
+    this.public = !!pub;
     this.status = status;
     this.owner = owner;
     this.stages = stages;
+    this.competitors = competitors;
   }
 
   static convertStatusCode(status) {
@@ -45,11 +47,12 @@ export default class Tournament {
       response.id,
       response.name,
       response.organization,
-      response.startDate,
+      new Date(response.start_date),
       response.public,
       response.status,
       response.owner,
-      response.stages.map((stage) => Stage.parse(stage)),
+      response.stages.map((stage) => Stage.fromCreateResponseBody(stage)),
+      response.competitors.map((competitor) => Competitor.fromCreateResponseBody(competitor)),
     );
   }
 }

@@ -6,6 +6,19 @@ import authHeader from '@/services/auth-header';
 const API_URL = process.env.VUE_APP_API_URL;
 
 class TournamentService {
+  static async getTournament(id) {
+    const endpoint = `/tournaments/${id}`;
+
+    const response = await axios.get(
+      API_URL + endpoint, {
+        headers: authHeader(),
+        validateStatus: (status) => status === 200,
+      },
+    );
+
+    return Tournament.fromCreateResponseBody(response.data);
+  }
+
   static async getTournaments(isFilteredByUser, perPage, currentPage) {
     const endpoint = '/tournaments';
 
@@ -46,6 +59,31 @@ class TournamentService {
         validateStatus: (status) => status === 201,
       },
     );
+    return Tournament.fromCreateResponseBody(response.data);
+  }
+
+  static async updateTournament(tournament) {
+    const endpoint = `/tournaments/${tournament.id}`;
+
+    const response = await axios.put(
+      API_URL + endpoint, tournament.asCreateRequestBody(), {
+        headers: authHeader(),
+        validateStatus: (status) => status === 200,
+      },
+    );
+    return Tournament.fromCreateResponseBody(response.data);
+  }
+
+  static async updateTournamentStatus(tournament, status) {
+    const endpoint = `/tournaments/${tournament.id}/status`;
+
+    const response = await axios.post(
+      API_URL + endpoint, { status }, {
+        headers: authHeader(),
+        validateStatus: (statusCode) => statusCode === 201,
+      },
+    );
+
     return Tournament.fromCreateResponseBody(response.data);
   }
 }

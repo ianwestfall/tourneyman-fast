@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from api.routers.security import get_current_active_user, get_current_active_user_or_none
 from api.schemas.tournament import TournamentDetail as TournamentSchema, TournamentCreate, TournamentUpdate, \
-    TournamentList
+    TournamentList, Status
 from database.db import get_db
 from database.models import User, Tournament
 
@@ -91,6 +91,24 @@ async def update_tournament(
     """
     if tournament:
         tournament.update(tournament_data, db)
+        return tournament
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'No editable tournament found with id {tournament_id} for user {current_user.email}',
+        )
+
+
+@router.post('/{tournament_id}/status', response_model=TournamentSchema, status_code=status.HTTP_201_CREATED)
+async def create_tournament_status(
+        tournament_id: int,
+        status_data: Status,
+        tournament: Tournament = Depends(alterable_tournament),
+        current_user: User = Depends(get_current_active_user),
+        db: Session = Depends(get_db),
+):
+    if tournament:
+        tournament.change_status(status_data.status, db)
         return tournament
     else:
         raise HTTPException(

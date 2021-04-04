@@ -45,7 +45,7 @@ async def create_competitor(
 
 
 # noinspection PyTypeChecker
-@router.post('/batch', response_model=List[CompetitorSchema])
+@router.post('/batch', response_model=List[CompetitorSchema], status_code=status.HTTP_201_CREATED)
 async def create_competitors(
         tournament_id: int,
         competitors: List[CompetitorCreate],

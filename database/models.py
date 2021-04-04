@@ -10,6 +10,7 @@ from api.schemas.security import UserCreate
 from api.schemas.stage import StageCreate
 from api.schemas.tournament import TournamentCreate, TournamentUpdate
 from database.db import Base
+from model_utils.utils import TournamentStatusUpdater
 
 
 class User(Base):
@@ -123,6 +124,11 @@ class Tournament(Base):
 
         # Apply the paging
         return query.offset(skip).limit(limit).all()
+
+    def change_status(self, status: int, db: Session):
+        TournamentStatusUpdater.update_status(self, status, db)
+        db.commit()
+        db.refresh(self)
 
     def update(self, tournament: TournamentUpdate, db: Session):
         self.name = tournament.name

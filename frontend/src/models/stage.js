@@ -17,10 +17,6 @@ export default class Stage {
     return TYPES;
   }
 
-  static parse(stage) {
-    return new Stage(stage.id, stage.ordinal, stage.type, stage.status, stage.params);
-  }
-
   asCreateRequestBody() {
     return {
       type: this.type,

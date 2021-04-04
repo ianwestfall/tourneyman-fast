@@ -9,6 +9,7 @@ export default {
   state: initialState,
   actions: {
     raiseError({ commit }, message) {
+      console.error(message);
       commit('raiseAlert', { type: typeMap.error, message });
     },
     raiseInfo({ commit }, message) {
