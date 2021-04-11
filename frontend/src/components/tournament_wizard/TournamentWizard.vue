@@ -2,13 +2,13 @@
   <b-card no-body>
     <b-tabs pills card vertical v-model="currentTabIndex" @activate-tab="checkActiveTab">
       <b-tab title="Basic Info">
-        <tournament-info :tournament="tournament" @next-page="updateBasicInfo"/>
+        <tournament-info :tournament="tournament" @updated="updateBasicInfo"/>
       </b-tab>
       <b-tab title="Tournament Format">
-        <tournament-format :tournament="tournament" @next-page="updateFormat"/>
+        <tournament-format :tournament="tournament" @updated="updateFormat"/>
       </b-tab>
       <b-tab title="Competitors">
-        <tournament-competitors :tournament="tournament" @next-page="updateCompetitors" />
+        <tournament-competitors :tournament="tournament" @updated="updateCompetitors" />
       </b-tab>
     </b-tabs>
   </b-card>

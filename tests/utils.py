@@ -7,11 +7,7 @@ from tests.conftest import Session
 from tests.factories import UserFactory
 
 
-class ApiTestClass:
-    @pytest.fixture(autouse=True)
-    def client(self):
-        yield TestClient(app)
-
+class DatabaseAwareTest:
     @pytest.fixture
     def db(self):
         session = Session()
@@ -19,6 +15,12 @@ class ApiTestClass:
             yield session
         finally:
             Session.remove()
+
+
+class ApiTest(DatabaseAwareTest):
+    @pytest.fixture(autouse=True)
+    def client(self):
+        yield TestClient(app)
 
     @pytest.fixture(autouse=True)
     def test_user(self, db):

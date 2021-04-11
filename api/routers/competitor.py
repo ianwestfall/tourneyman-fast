@@ -64,6 +64,7 @@ async def create_competitors(
         try:
             return Competitor.create_batch(tournament, competitors, db)
         except IntegrityError:
+            db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail='Competitors must have at least a last name or an organization',
@@ -88,6 +89,36 @@ async def get_competitors(
         return tournament.competitors
 
 
+# noinspection PyTypeChecker
+@router.put('/', response_model=List[CompetitorSchema])
+async def update_competitors(
+        tournament_id: int,
+        competitors: List[CompetitorCreate],
+        tournament: Tournament = Depends(alterable_tournament),
+        db: Session = Depends(get_db),
+):
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'No tournament found with id {tournament_id}',
+        )
+    else:
+        # Delete all the existing competitors and create new ones
+        tournament.delete_competitors(db, autocommit=False)
+        try:
+            Competitor.create_batch(tournament, competitors, db, autocommit=False)
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='Competitors must have at least a last name or an organization',
+            )
+        else:
+            db.commit()
+            db.refresh(tournament)
+            return tournament.competitors
+
+
 @router.get('/{competitor_id}', response_model=CompetitorSchema)
 async def get_competitor(
         tournament_id: int,
@@ -107,7 +138,7 @@ async def get_competitor(
         return competitor
 
 
-@router.put('/{compoetitor_id}', response_model=CompetitorSchema)
+@router.put('/{competitor_id}', response_model=CompetitorSchema)
 async def update_competitor(
         tournament_id: int,
         competitor_id: int,

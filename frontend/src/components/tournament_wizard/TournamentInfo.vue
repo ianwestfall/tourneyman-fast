@@ -11,7 +11,7 @@
             id="tournament-name"
             v-model="tournament.name"
             required
-            :disabled="tournament.status > 1">
+            :disabled="disabled">
           </b-form-input>
         </b-form-group>
         <b-form-group
@@ -22,7 +22,7 @@
           <b-form-input
             id="tournament-org"
             v-model="tournament.organization"
-            :disabled="tournament.status > 1">
+            :disabled="disabled">
           </b-form-input>
         </b-form-group>
         <b-form-group
@@ -35,7 +35,7 @@
             v-model="tournament.startDate"
             required
             value-as-date
-            :disabled="tournament.status > 1"
+            :disabled="disabled"
           >
           </b-form-datepicker>
         </b-form-group>
@@ -47,10 +47,10 @@
           <b-form-checkbox
             id="tournament-public"
             v-model="tournament.public"
-            :disabled="tournament.status > 1"
+            :disabled="disabled"
           ></b-form-checkbox>
         </b-form-group>
-        <b-button-group v-if="tournament.status < 2">
+        <b-button-group v-if="!disabled">
           <b-button type="reset" variant="danger" v-if="!tournamentCreated">Reset</b-button>
           <b-button type="submit" variant="primary" :disabled="updating">
             <span v-if="!updating">{{ tournamentCreated ? 'Update': 'Next' }}</span>
@@ -73,6 +73,10 @@ export default {
     tournament: {
       type: Tournament,
       default: () => new Tournament(),
+    },
+    editable: {
+      type: Boolean,
+      default: () => true,
     },
   },
   data() {
@@ -99,9 +103,9 @@ export default {
           const tournament = await TournamentService.updateTournament(this.tournament);
           this.$store.dispatch(
             'alerts/raiseInfo',
-            `Successfully created a new tournament with id ${tournament.id}!`,
+            `Successfully updated tournament with id ${tournament.id}!`,
           );
-          this.$emit('next-page', tournament);
+          this.$emit('updated', tournament);
         } catch (error) {
           this.$store.dispatch(
             'alerts/raiseError',
@@ -118,7 +122,7 @@ export default {
           );
 
           // Navigate to the next page
-          this.$emit('next-page', tournament);
+          this.$emit('updated', tournament);
         } catch (error) {
           this.$store.dispatch(
             'alerts/raiseError',
@@ -147,6 +151,9 @@ export default {
   computed: {
     tournamentCreated() {
       return !!this.tournament.id;
+    },
+    disabled() {
+      return !this.editable || this.tournament.status > 1;
     },
   },
 };

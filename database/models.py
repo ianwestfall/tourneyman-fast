@@ -1,6 +1,6 @@
 import enum
 from collections import defaultdict
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Sequence
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, CheckConstraint, ForeignKey, or_, JSON
 from sqlalchemy.orm import Session, relationship, backref
@@ -64,8 +64,8 @@ class Tournament(Base):
     owner = relationship('User', back_populates='tournaments')
 
     competitors = relationship('Competitor', back_populates='tournament', cascade='all, delete', passive_deletes=True)
-    stages = relationship('Stage', back_populates='tournament', cascade='all, delete', passive_deletes=True,
-                          order_by='Stage.ordinal')
+    stages: Sequence['Stage'] = relationship('Stage', back_populates='tournament', cascade='all, delete, delete-orphan',
+                                             passive_deletes=True, order_by='Stage.ordinal')
 
     status_options = list(map(int, TournamentStatus))
 
@@ -144,6 +144,19 @@ class Tournament(Base):
         db.delete(self)
         db.commit()
 
+    def delete_stages(self, db: Session, autocommit=True):
+        # The delete-orphan cascade setting on the stages relationship lets us just do this
+        self.stages = []
+        if autocommit:
+            db.commit()
+
+    def delete_competitors(self, db: Session, autocommit=True):
+        for competitor in self.competitors:
+            competitor.delete(db=db, autocommit=False)
+
+        if autocommit:
+            db.commit()
+
     def get_last_stage(self):
         """
         Gets the last stage, if any exist
@@ -182,7 +195,7 @@ class Competitor(Base):
         return db_competitor
 
     @staticmethod
-    def create_batch(tournament: Tournament, competitors: List[CompetitorCreate], db: Session):
+    def create_batch(tournament: Tournament, competitors: List[CompetitorCreate], db: Session, autocommit=True):
         batch = []
         for competitor in competitors:
             batch.append(Competitor(
@@ -194,7 +207,10 @@ class Competitor(Base):
             ))
         # No need to refresh after this since it doesn't associate the objects to the session
         db.bulk_save_objects(batch, return_defaults=True)
-        db.commit()
+
+        if autocommit:
+            db.commit()
+
         return batch
 
     @staticmethod
@@ -211,9 +227,11 @@ class Competitor(Base):
         db.commit()
         db.refresh(self)
 
-    def delete(self, db: Session):
+    def delete(self, db: Session, autocommit=True):
         db.delete(self)
-        db.commit()
+
+        if autocommit:
+            db.commit()
 
 
 class Stage(Base):
@@ -275,7 +293,7 @@ class Stage(Base):
         return Stage.StageType.parse_params(self.type, self.params)
 
     @staticmethod
-    def create(tournament: Tournament, stage: StageCreate, db: Session):
+    def create(tournament: Tournament, stage: StageCreate, db: Session, autocommit=True):
         # Make sure the requested stage type is compatible with the existing stages
         most_recent_stage: Optional[Stage] = tournament.get_last_stage()
         most_recent_stage_type: Optional[Stage.StageType] = Stage.StageType(most_recent_stage.type) \
@@ -295,21 +313,34 @@ class Stage(Base):
             params=stage.params,
         )
         db.add(db_stage)
-        db.commit()
-        db.refresh(db_stage)
+
+        if autocommit:
+            db.commit()
+            db.refresh(db_stage)
         return db_stage
 
     @staticmethod
     def by_id(stage_id: int, db: Session):
         return db.query(Stage).filter(Stage.id == stage_id).first()
 
-    def delete(self, db: Session):
+    def update(self, stage: StageCreate, db: Session, autocommit: bool = True):
+        self.type = stage.type
+        self.params = stage.params
+
+        db.add(self)
+        if autocommit:
+            db.commit()
+            db.refresh(self)
+
+    def delete(self, validate_ordinal: bool = True, db: Session = None, autocommit=True):
         # Make sure this is the final stage
-        if self != self.tournament.get_last_stage():
+        if validate_ordinal and self != self.tournament.get_last_stage():
             raise ValueError(f'Stage {self.id} is not the last stage of tournament {self.tournament_id}')
 
         db.delete(self)
-        db.commit()
+
+        if autocommit:
+            db.commit()
 
 
 class Pool(Base):

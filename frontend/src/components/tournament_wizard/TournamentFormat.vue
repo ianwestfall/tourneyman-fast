@@ -6,10 +6,10 @@
           <b-list-group-item v-for="(stage, index) in tournament.stages" :key="index">
             <b-row>
               <b-col col cols="10">
-                <stage-editor :stage="stage" />
+                <stage-editor :stage="stage" :disabled="disabled" />
               </b-col>
               <b-col col cols="2">
-                <div class="float-right" v-if="index === tournament.stages.length - 1">
+                <div class="float-right" v-if="!disabled && index === tournament.stages.length - 1">
                   <b-button variant="danger" @click="removeStage">
                     <b-icon-x></b-icon-x>
                   </b-button>
@@ -24,7 +24,7 @@
           </b-list-group-item>
         </b-list-group>
         <br />
-        <b-button-group>
+        <b-button-group v-if="!disabled">
           <b-button type="reset" variant="danger" v-if="!stagesCreated">Reset</b-button>
           <b-button type="submit" variant="primary" :disabled="updating">
             <span v-if="!updating">{{ stagesCreated ? 'Update' : 'Next' }}</span>
@@ -47,6 +47,10 @@ export default {
   name: 'TournamentFormat',
   props: {
     tournament: Tournament,
+    editable: {
+      type: Boolean,
+      default: () => true,
+    },
   },
   data() {
     return {
@@ -76,6 +80,19 @@ export default {
 
       if (this.stagesCreated) {
         // Update existing stages, create new ones, delete missing ones.
+        try {
+          const stages = await StageService.updateStages(this.tournament, this.tournament.stages);
+          this.$store.dispatch(
+            'alerts/raiseInfo',
+            `Successfully updated ${stages.length} stage(s) for tournament with id ${this.tournament.id}`,
+          );
+          this.$emit('updated', stages);
+        } catch (error) {
+          this.$store.dispatch(
+            'alerts/raiseError',
+            `Failed to update stages for tournament with id ${this.tournament.id}: ${error.toString()}`,
+          );
+        }
       } else {
         // Make the call to create the stages on the tournament.
         try {
@@ -87,7 +104,7 @@ export default {
           );
 
           // Navigate to the next page
-          this.$emit('next-page', stages);
+          this.$emit('updated', stages);
         } catch (error) {
           this.$store.dispatch(
             'alerts/raiseError',
@@ -101,6 +118,10 @@ export default {
   },
   computed: {
     canAddAnotherStage() {
+      if (this.disabled) {
+        return false;
+      }
+
       if (!this.tournament || !this.tournament.stages || this.tournament.stages.length === 0) {
         return false;
       }
@@ -112,6 +133,9 @@ export default {
       return this.tournament
         && this.tournament.stages
         && this.tournament.stages.some((stage) => !!stage.id);
+    },
+    disabled() {
+      return !this.editable || this.tournament.status > 1;
     },
   },
 };

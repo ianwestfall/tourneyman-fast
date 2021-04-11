@@ -17,6 +17,19 @@ class CompetitorService {
 
     return response.data.map((competitor) => Competitor.fromCreateResponseBody(competitor));
   }
+
+  static async updateCompetitors(tournament, competitors) {
+    const endpoint = `/tournaments/${tournament.id}/competitors/`;
+
+    const response = await axios.put(
+      API_URL + endpoint, competitors.map((competitor) => competitor.asCreateRequestBody()), {
+        headers: authHeader(),
+        validateStatus: (status) => status === 200,
+      },
+    );
+
+    return response.data.map((competitor) => Competitor.fromCreateResponseBody(competitor));
+  }
 }
 
 export default CompetitorService;

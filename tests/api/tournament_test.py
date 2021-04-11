@@ -4,11 +4,11 @@ from datetime import datetime, timedelta
 from api.schemas.tournament import TournamentList
 from database.models import Tournament
 from tests.factories import TournamentFactory
-from tests.utils import ApiTestClass
+from tests.utils import ApiTest
 
 
 # noinspection PyMethodMayBeStatic
-class TestTournament(ApiTestClass):
+class TestTournament(ApiTest):
     def test_create_tournament(self, client, test_user, db):
         test_start_date = datetime.now().isoformat()
         response = client.post('/tournaments/', json={

@@ -17,6 +17,19 @@ class StageService {
 
     return response.data.map((stage) => Stage.fromCreateResponseBody(stage));
   }
+
+  static async updateStages(tournament, stages) {
+    const endpoint = `/tournaments/${tournament.id}/stages/`;
+
+    const response = await axios.put(
+      API_URL + endpoint, stages.map((stage) => stage.asCreateRequestBody()), {
+        headers: authHeader(),
+        validateStatus: (status) => status === 200,
+      },
+    );
+
+    return response.data.map((stage) => Stage.fromCreateResponseBody(stage));
+  }
 }
 
 export default StageService;

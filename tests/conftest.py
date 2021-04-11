@@ -54,3 +54,6 @@ def setup_database():
         yield
 
         Base.metadata.drop_all()
+
+
+not_yet_implemented = pytest.mark.skip(reason='Not yet implemented')

@@ -17,6 +17,7 @@ async def get_stage_by_id(stage_id: int, db: Session = Depends(get_db)) -> Optio
     return Stage.by_id(stage_id, db)
 
 
+# noinspection PyTypeChecker
 @router.post('/', response_model=List[StageSchema], status_code=status.HTTP_201_CREATED)
 async def create_stage(
         tournament_id: int,
@@ -60,6 +61,30 @@ async def get_stages(
         return tournament.stages
 
 
+# noinspection PyTypeChecker
+@router.put('/', response_model=List[StageSchema])
+async def update_stages(
+        tournament_id: int,
+        stages: List[StageCreate],
+        tournament: Tournament = Depends(alterable_tournament),
+        db: Session = Depends(get_db),
+):
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'No tournament found with id {tournament_id}',
+        )
+    else:
+        tournament.delete_stages(db, autocommit=False)
+
+        for stage in stages:
+            tournament.stages += [Stage.create(tournament, stage, db, autocommit=False)]
+
+        db.commit()
+        db.refresh(tournament)
+        return tournament.stages
+
+
 @router.get('/{stage_id}', response_model=StageSchema)
 async def get_stage(
         tournament_id: int,
@@ -98,7 +123,7 @@ async def delete_stage(
         )
     else:
         try:
-            stage.delete(db)
+            stage.delete(db=db)
         except ValueError as e:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,

@@ -4,8 +4,13 @@
     <b-form-group
       description="What type of stage is this?"
     >
-      <b-form-select id="stage-type" v-model="stage.type" :options="stageTypes" required>
-      </b-form-select>
+      <b-form-select
+        id="stage-type"
+        v-model="stage.type"
+        :options="stageTypes"
+        required
+        :disabled="disabled"
+      ></b-form-select>
     </b-form-group>
     <div v-if="stage.type === 0">
       <!-- Put pool-type configuration here -->
@@ -18,6 +23,7 @@
           type="number"
           required
           v-model="stage.params.minimum_pool_size"
+          :disabled="disabled"
         ></b-form-input>
       </b-form-group>
     </div>
@@ -27,7 +33,7 @@
         label="Seeding type:"
         description="Should the bracket take seed values into account or be randomized?"
       >
-        <b-form-radio-group required v-model="stage.params.seeded">
+        <b-form-radio-group required v-model="stage.params.seeded" :disabled="disabled">
           <b-form-radio value="1">Seeded</b-form-radio>
           <b-form-radio value="0">Randomized</b-form-radio>
         </b-form-radio-group>
@@ -43,6 +49,7 @@ export default {
   name: 'StageEditor',
   props: {
     stage: Stage,
+    disabled: Boolean,
   },
   data() {
     return {
