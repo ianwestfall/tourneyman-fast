@@ -1,29 +1,41 @@
 <template>
-  <b-card no-body>
-    <b-tabs card>
-      <b-tab title="Tournament Info">
-        <tournament-info
-          :tournament="tournament"
-          @updated="updateBasicInfo"
-          :editable="editable"
-        ></tournament-info>
-      </b-tab>
-      <b-tab title="Format">
-        <tournament-format
-          :tournament="tournament"
-          @updated="updateFormat"
-          :editable="editable"
-        ></tournament-format>
-      </b-tab>
-      <b-tab title="Competitors">
-        <tournament-competitors
-          :tournament="tournament"
-          @updated="updateCompetitors"
-          :editable="editable"
-        ></tournament-competitors>
-      </b-tab>
-    </b-tabs>
-  </b-card>
+  <div>
+    <b-card :title="`Tournament Status: ${humanReadableStatus}`">
+      <div>
+        <b-button
+          v-if="tournament.status === 1 && editable"
+          variant="primary"
+        >
+          Start Tournament
+        </b-button>
+      </div>
+    </b-card>
+    <b-card no-body>
+      <b-tabs card>
+        <b-tab title="Tournament Info">
+          <tournament-info
+            :tournament="tournament"
+            @updated="updateBasicInfo"
+            :editable="editable"
+          ></tournament-info>
+        </b-tab>
+        <b-tab title="Format">
+          <tournament-format
+            :tournament="tournament"
+            @updated="updateFormat"
+            :editable="editable"
+          ></tournament-format>
+        </b-tab>
+        <b-tab title="Competitors">
+          <tournament-competitors
+            :tournament="tournament"
+            @updated="updateCompetitors"
+            :editable="editable"
+          ></tournament-competitors>
+        </b-tab>
+      </b-tabs>
+    </b-card>
+  </div>
 </template>
 
 <script>
@@ -32,6 +44,7 @@ import TournamentService from '@/services/tournament.service';
 import TournamentInfo from '@/components/tournament_wizard/TournamentInfo.vue';
 import TournamentFormat from '@/components/tournament_wizard/TournamentFormat.vue';
 import TournamentCompetitors from '@/components/tournament_wizard/TournamentCompetitors.vue';
+import tournamentStatusFilter from '@/filters/tournamentStatus.filter';
 
 export default {
   name: 'TournamentDetail',
@@ -65,6 +78,9 @@ export default {
         && user
         && this.tournament.owner
         && this.tournament.owner.email === user.email;
+    },
+    humanReadableStatus() {
+      return tournamentStatusFilter(this.tournament.status);
     },
   },
 };

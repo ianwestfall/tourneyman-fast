@@ -8,9 +8,12 @@ import 'bootswatch/dist/darkly/bootstrap.min.css';
 import App from './App.vue';
 import router from './router';
 import store from './store';
+import tournamentStatusFilter from './filters/tournamentStatus.filter';
 
 Vue.use(BootstrapVue);
 Vue.use(IconsPlugin);
+
+Vue.filter('tournamentStatus', tournamentStatusFilter);
 
 Vue.config.productionTip = false;
 

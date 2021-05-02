@@ -10,7 +10,11 @@ from api.schemas.security import UserCreate
 from api.schemas.stage import StageCreate
 from api.schemas.tournament import TournamentCreate, TournamentUpdate
 from database.db import Base
-from model_utils.utils import TournamentStatusUpdater
+from lib.status_updaters import TournamentStatusUpdater
+
+
+class TournamentError(Exception):
+    pass
 
 
 class User(Base):
@@ -163,6 +167,50 @@ class Tournament(Base):
         """
         return self.stages[-1] if self.stages else None
 
+    def progress(self, db: Session, autocommit=True):
+        """
+        Find the current active stage, if any.
+        If no active stage, start the first stage and generate matches.
+        If active stage, make sure all of its matches are complete.
+            If complete, close the stage and start the next one.
+                If current stage is the last stage, close out the tournament.
+            If not complete, raise error.
+        """
+        stage_to_start = None
+        if self.status == Tournament.TournamentStatus.ready:
+            # The tournament has not yet started, so start it and generate matches for the first stage
+            stage_to_start = self.stages[0]
+            self.status = Tournament.TournamentStatus.active
+            db.add(self)
+        elif self.status == Tournament.TournamentStatus.active:
+            # The tournament is already active, so ensure the current stage is complete before moving to the next one
+            active_stages = [stage for stage in self.stages if stage.status == Stage.StageStatus.active]
+
+            if len(active_stages) != 1:
+                raise TournamentError(f'Unexpected number of stages are currently active: {len(active_stages)}')
+
+            current_stage = active_stages[0]
+            current_stage.progress(db, autocommit=False)
+
+            # Grab the first stage in status pending, it's the next one to start
+            pending_stages = [stage for stage in self.stages if stage.status == Stage.StageStatus.pending]
+            if len(pending_stages):
+                stage_to_start = pending_stages[0]
+        else:
+            raise TournamentError(f'A tournament with status {self.status} cannot be progressed')
+
+        # The next stage needs to be started
+        if stage_to_start:
+            stage_to_start.progress(db, autocommit=False)
+        else:
+            # If there's no stage to start, the tournament is complete
+            self.status = Tournament.TournamentStatus.complete
+            db.add(self)
+
+        if autocommit:
+            db.commit()
+            db.refresh(self)
+
 
 class Competitor(Base):
     __tablename__ = 'competitor'
@@ -258,9 +306,9 @@ class Stage(Base):
             parsed_params = {}
 
             if stage_type == cls.pool:
-                parsed_params['minimum_pool_size'] = int(params['minimum_pool_size'])
+                parsed_params['minimum_pool_size'] = int(params.get('minimum_pool_size', 0))
             else:
-                parsed_params['seeded'] = bool(params['seeded'])
+                parsed_params['seeded'] = bool(params.get('seeded', False))
 
             return parsed_params
 
@@ -341,6 +389,53 @@ class Stage(Base):
 
         if autocommit:
             db.commit()
+
+    def all_matches_complete(self):
+        """
+        If there's a single match for this stage that isn't in status complete, return False, otherwise True
+        """
+        incomplete_matches = [
+            match
+            for pool in self.pools
+            for match in pool.matches
+            if match.status != Match.MatchStatus.complete
+        ]
+        return len(incomplete_matches) == 0
+
+    def progress(self, db: Session, autocommit=True):
+        """
+        If status is pending, generate matches and update status to active
+        If status is active, make sure all matches are complete and update status to complete
+        Otherwise, raise TournamentError
+        """
+        if self.status == Stage.StageStatus.pending:
+            # Generate pools and matches and update the status to active
+            self.generate_pools_and_matches()
+            self.status = Stage.StageStatus.active
+        elif self.status == Stage.StageStatus.active:
+            # If all matches are complete, update status to complete, otherwise raise an error
+            if self.all_matches_complete():
+                self.status = Stage.StageStatus.complete
+            else:
+                raise TournamentError('Cannot complete current stage; it still has pending matches')
+        else:
+            raise TournamentError(f'Cannot progress a stage that is already complete')
+
+        db.add(self)
+
+        if autocommit:
+            db.commit()
+
+    def generate_pools_and_matches(self, db: Session, autocommit=True):
+        from lib.match_generators.match_generator import MatchGenerator
+        try:
+            match_generator = MatchGenerator.get_match_generator(self)
+            match_generator.generate_matches(db, autocommit=False)
+        except ValueError as e:
+            raise TournamentError(e)
+        else:
+            if autocommit:
+                db.commit()
 
 
 class Pool(Base):
