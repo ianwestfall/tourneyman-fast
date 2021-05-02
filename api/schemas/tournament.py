@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel
 
 from api.schemas.competitor import Competitor
 from api.schemas.security import User

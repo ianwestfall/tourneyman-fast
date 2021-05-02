@@ -49,7 +49,7 @@ class TestUpdateStages(ApiTest):
         tournament = TournamentFactory(stages=3, owner=test_user['user'])
 
         response = client.put(f'/tournaments/{tournament.id}/stages/', json=[{
-            'type': Stage.StageType.bracket_single_elimination,
+            'type': Stage.StageType.BRACKET_SINGLE_ELIMINATION,
             'params': {'seeded': True},
         }], headers={
             'Authorization': f'Bearer {test_user["auth_token"]}',
@@ -59,9 +59,9 @@ class TestUpdateStages(ApiTest):
         assert response.status_code == 200
         response_json = response.json()
         assert len(response_json) == 1
-        assert response_json[0]['type'] == Stage.StageType.bracket_single_elimination
+        assert response_json[0]['type'] == Stage.StageType.BRACKET_SINGLE_ELIMINATION
         assert response_json[0]['ordinal'] == 0
-        assert response_json[0]['status'] == Stage.StageStatus.pending
+        assert response_json[0]['status'] == Stage.StageStatus.PENDING
         assert response_json[0]['params'] == {'seeded': True}
 
         # Verify the DB looks ok
@@ -69,16 +69,16 @@ class TestUpdateStages(ApiTest):
         assert len(stages) == 1
         assert stages[0].tournament == tournament
         assert stages[0].ordinal == 0
-        assert stages[0].type == Stage.StageType.bracket_single_elimination
+        assert stages[0].type == Stage.StageType.BRACKET_SINGLE_ELIMINATION
 
     def test_new_stages_are_created_if_necessary(self, client, test_user, db):
         tournament = TournamentFactory(stages=1, owner=test_user['user'])
 
         response = client.put(f'/tournaments/{tournament.id}/stages/', json=[{
-            'type': Stage.StageType.pool,
+            'type': Stage.StageType.POOL,
             'params': {'minimum_pool_size': 5},
         }, {
-            'type': Stage.StageType.bracket_single_elimination,
+            'type': Stage.StageType.BRACKET_SINGLE_ELIMINATION,
             'params': {'seeded': True},
         }], headers={
             'Authorization': f'Bearer {test_user["auth_token"]}',
@@ -88,13 +88,13 @@ class TestUpdateStages(ApiTest):
         assert response.status_code == 200
         response_json = response.json()
         assert len(response_json) == 2
-        assert response_json[0]['type'] == Stage.StageType.pool
+        assert response_json[0]['type'] == Stage.StageType.POOL
         assert response_json[0]['ordinal'] == 0
-        assert response_json[0]['status'] == Stage.StageStatus.pending
+        assert response_json[0]['status'] == Stage.StageStatus.PENDING
         assert response_json[0]['params'] == {'minimum_pool_size': 5}
-        assert response_json[1]['type'] == Stage.StageType.bracket_single_elimination
+        assert response_json[1]['type'] == Stage.StageType.BRACKET_SINGLE_ELIMINATION
         assert response_json[1]['ordinal'] == 1
-        assert response_json[1]['status'] == Stage.StageStatus.pending
+        assert response_json[1]['status'] == Stage.StageStatus.PENDING
         assert response_json[1]['params'] == {'seeded': True}
 
         # Make sure the DB looks ok
@@ -102,19 +102,19 @@ class TestUpdateStages(ApiTest):
         assert len(stages) == 2
         assert stages[0].tournament == tournament
         assert stages[0].ordinal == 0
-        assert stages[0].type == Stage.StageType.pool
+        assert stages[0].type == Stage.StageType.POOL
         assert stages[1].tournament == tournament
         assert stages[1].ordinal == 1
-        assert stages[1].type == Stage.StageType.bracket_single_elimination
+        assert stages[1].type == Stage.StageType.BRACKET_SINGLE_ELIMINATION
 
     def test_updates_without_length_changes_work(self, client, test_user, db):
         tournament = TournamentFactory(stages=2, owner=test_user['user'])
 
         response = client.put(f'/tournaments/{tournament.id}/stages/', json=[{
-            'type': Stage.StageType.pool,
+            'type': Stage.StageType.POOL,
             'params': {'minimum_pool_size': 7},
         }, {
-            'type': Stage.StageType.pool,
+            'type': Stage.StageType.POOL,
             'params': {'minimum_pool_size': 10},
         }], headers={
             'Authorization': f'Bearer {test_user["auth_token"]}',
@@ -124,13 +124,13 @@ class TestUpdateStages(ApiTest):
         assert response.status_code == 200
         response_json = response.json()
         assert len(response_json) == 2
-        assert response_json[0]['type'] == Stage.StageType.pool
+        assert response_json[0]['type'] == Stage.StageType.POOL
         assert response_json[0]['ordinal'] == 0
-        assert response_json[0]['status'] == Stage.StageStatus.pending
+        assert response_json[0]['status'] == Stage.StageStatus.PENDING
         assert response_json[0]['params'] == {'minimum_pool_size': 7}
-        assert response_json[1]['type'] == Stage.StageType.pool
+        assert response_json[1]['type'] == Stage.StageType.POOL
         assert response_json[1]['ordinal'] == 1
-        assert response_json[1]['status'] == Stage.StageStatus.pending
+        assert response_json[1]['status'] == Stage.StageStatus.PENDING
         assert response_json[1]['params'] == {'minimum_pool_size': 10}
 
         # Make sure the DB looks ok
@@ -138,11 +138,11 @@ class TestUpdateStages(ApiTest):
         assert len(stages) == 2
         assert stages[0].tournament == tournament
         assert stages[0].ordinal == 0
-        assert stages[0].type == Stage.StageType.pool
+        assert stages[0].type == Stage.StageType.POOL
         assert stages[0].params == {'minimum_pool_size': 7}
         assert stages[1].tournament == tournament
         assert stages[1].ordinal == 1
-        assert stages[1].type == Stage.StageType.pool
+        assert stages[1].type == Stage.StageType.POOL
         assert stages[1].params == {'minimum_pool_size': 10}
 
     @not_yet_implemented

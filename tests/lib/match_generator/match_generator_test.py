@@ -19,17 +19,17 @@ class TestMatchGenerator(DatabaseAwareTest):
             MatchGenerator.get_match_generator(stage)
 
     def test_get_match_generator_pool_stage_type_returns_correctly(self, db):
-        stage: Stage = StageFactory(type=Stage.StageType.pool)
+        stage: Stage = StageFactory(type=Stage.StageType.POOL)
         mg = MatchGenerator.get_match_generator(stage)
         assert isinstance(mg, PoolMatchGenerator)
 
     def test_get_match_generator_single_bracket_stage_type_returns_correctly(self, db):
-        stage: Stage = StageFactory(type=Stage.StageType.bracket_single_elimination)
+        stage: Stage = StageFactory(type=Stage.StageType.BRACKET_SINGLE_ELIMINATION)
         mg = MatchGenerator.get_match_generator(stage)
         assert isinstance(mg, SingleEliminationBracketMatchGenerator)
 
     def test_get_match_generator_double_bracket_stage_type_returns_correctly(self, db):
-        stage: Stage = StageFactory(type=Stage.StageType.bracket_double_elimination)
+        stage: Stage = StageFactory(type=Stage.StageType.BRACKET_DOUBLE_ELIMINATION)
         mg = MatchGenerator.get_match_generator(stage)
         assert isinstance(mg, DoubleEliminationBracketMatchGenerator)
 
@@ -37,7 +37,7 @@ class TestMatchGenerator(DatabaseAwareTest):
 # noinspection PyMethodMayBeStatic
 class TestPoolMatchGenerator(DatabaseAwareTest):
     def test_non_pending_stages_raise_errors(self, db):
-        stage: Stage = StageFactory(status=Stage.StageStatus.active)
+        stage: Stage = StageFactory(status=Stage.StageStatus.ACTIVE)
         CompetitorFactory.create_batch(10, tournament=stage.tournament)
 
         with pytest.raises(ValueError):

@@ -36,7 +36,7 @@ class TestTournament(ApiTest):
         assert tournament.name == 'Test Tournament'
         assert tournament.organization == 'CKDF'
         assert tournament.start_date == datetime.fromisoformat(test_start_date)
-        assert tournament.status == Tournament.TournamentStatus.pending
+        assert tournament.status == Tournament.TournamentStatus.PENDING
         assert tournament.public is True
         assert tournament.owner == test_user['user']
         assert tournament.competitors == []

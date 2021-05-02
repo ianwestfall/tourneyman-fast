@@ -5,6 +5,7 @@
         <b-button
           v-if="tournament.status === 1 && editable"
           variant="primary"
+          @click="startTournament"
         >
           Start Tournament
         </b-button>
@@ -33,6 +34,9 @@
             :editable="editable"
           ></tournament-competitors>
         </b-tab>
+        <b-tab title="Matches" v-if="tournament.status > 1">
+          <tournament-matches :tournament="tournament"></tournament-matches>
+        </b-tab>
       </b-tabs>
     </b-card>
   </div>
@@ -44,11 +48,17 @@ import TournamentService from '@/services/tournament.service';
 import TournamentInfo from '@/components/tournament_wizard/TournamentInfo.vue';
 import TournamentFormat from '@/components/tournament_wizard/TournamentFormat.vue';
 import TournamentCompetitors from '@/components/tournament_wizard/TournamentCompetitors.vue';
+import TournamentMatches from '@/components/matches/TournamentMatches.vue';
 import tournamentStatusFilter from '@/filters/tournamentStatus.filter';
 
 export default {
   name: 'TournamentDetail',
-  components: { TournamentInfo, TournamentFormat, TournamentCompetitors },
+  components: {
+    TournamentInfo,
+    TournamentFormat,
+    TournamentCompetitors,
+    TournamentMatches,
+  },
   props: {
     id: Number,
   },
@@ -66,6 +76,9 @@ export default {
     },
     updateCompetitors(competitors) {
       this.tournament.competitors = competitors;
+    },
+    async startTournament() {
+      this.tournament = await TournamentService.updateTournamentStatus(this.tournament, 2);
     },
   },
   async created() {

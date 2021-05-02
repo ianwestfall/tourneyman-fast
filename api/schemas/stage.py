@@ -1,6 +1,8 @@
-from typing import Dict
+from typing import Dict, List
 
 from pydantic import BaseModel
+
+from api.schemas.pool import Pool
 
 
 class StageBase(BaseModel):
@@ -17,6 +19,7 @@ class Stage(StageBase):
     tournament_id: int
     ordinal: int
     status: int
+    pools: List[Pool]
 
     class Config:
         orm_mode = True

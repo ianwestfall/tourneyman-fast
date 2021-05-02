@@ -98,7 +98,7 @@ class TournamentActiveStatusUpdater(TournamentStatusUpdater):
         """
         The first stage should be initialized
         """
-        raise NotImplementedError()
+        tournament.progress(db, autocommit=False)
 
     def down(self, tournament: Tournament, db: Session):
         """

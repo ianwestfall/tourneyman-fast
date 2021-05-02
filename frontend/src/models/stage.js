@@ -1,3 +1,5 @@
+import Pool from '@/models/pool';
+
 const TYPES = [
   { value: 0, text: 'Pool' },
   { value: 1, text: 'Single Elimination Bracket' },
@@ -5,12 +7,13 @@ const TYPES = [
 ];
 
 export default class Stage {
-  constructor(id, ordinal, type, status, params) {
+  constructor(id, ordinal, type, status, params, pools) {
     this.id = id;
     this.ordinal = ordinal;
     this.type = type;
     this.status = status;
     this.params = params;
+    this.pools = pools;
   }
 
   static get types() {
@@ -31,6 +34,7 @@ export default class Stage {
       response.type,
       response.status,
       response.params,
+      response.pools.map((pool) => Pool.fromCreateResponseBody(pool)),
     );
   }
 }

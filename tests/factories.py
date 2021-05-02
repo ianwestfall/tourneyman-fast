@@ -50,8 +50,8 @@ class StageFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     tournament = factory.SubFactory(TournamentFactory)
     ordinal = 0
-    type = models.Stage.StageType.pool
-    status = models.Stage.StageStatus.pending
+    type = models.Stage.StageType.POOL
+    status = models.Stage.StageStatus.PENDING
     params = {'minimum_pool_size': 5}
 
 

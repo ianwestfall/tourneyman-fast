@@ -53,16 +53,16 @@ class Tournament(Base):
     __tablename__ = 'tournament'
 
     class TournamentStatus(enum.IntEnum):
-        pending = 0
-        ready = 1
-        active = 2
-        complete = 3
+        PENDING = 0
+        READY = 1
+        ACTIVE = 2
+        COMPLETE = 3
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     organization = Column(String, nullable=True)
     start_date = Column(DateTime, nullable=False)
-    status = Column(Integer, default=TournamentStatus.pending, nullable=False)
+    status = Column(Integer, default=TournamentStatus.PENDING, nullable=False)
     public = Column(Boolean, default=False, nullable=False)
     owner_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     owner = relationship('User', back_populates='tournaments')
@@ -177,14 +177,14 @@ class Tournament(Base):
             If not complete, raise error.
         """
         stage_to_start = None
-        if self.status == Tournament.TournamentStatus.ready:
+        if self.status == Tournament.TournamentStatus.READY:
             # The tournament has not yet started, so start it and generate matches for the first stage
             stage_to_start = self.stages[0]
-            self.status = Tournament.TournamentStatus.active
+            self.status = Tournament.TournamentStatus.ACTIVE
             db.add(self)
-        elif self.status == Tournament.TournamentStatus.active:
+        elif self.status == Tournament.TournamentStatus.ACTIVE:
             # The tournament is already active, so ensure the current stage is complete before moving to the next one
-            active_stages = [stage for stage in self.stages if stage.status == Stage.StageStatus.active]
+            active_stages = [stage for stage in self.stages if stage.status == Stage.StageStatus.ACTIVE]
 
             if len(active_stages) != 1:
                 raise TournamentError(f'Unexpected number of stages are currently active: {len(active_stages)}')
@@ -193,7 +193,7 @@ class Tournament(Base):
             current_stage.progress(db, autocommit=False)
 
             # Grab the first stage in status pending, it's the next one to start
-            pending_stages = [stage for stage in self.stages if stage.status == Stage.StageStatus.pending]
+            pending_stages = [stage for stage in self.stages if stage.status == Stage.StageStatus.PENDING]
             if len(pending_stages):
                 stage_to_start = pending_stages[0]
         else:
@@ -204,7 +204,7 @@ class Tournament(Base):
             stage_to_start.progress(db, autocommit=False)
         else:
             # If there's no stage to start, the tournament is complete
-            self.status = Tournament.TournamentStatus.complete
+            self.status = Tournament.TournamentStatus.COMPLETE
             db.add(self)
 
         if autocommit:
@@ -286,9 +286,9 @@ class Stage(Base):
     __tablename__ = 'stage'
 
     class StageType(enum.IntEnum):
-        pool = 0
-        bracket_single_elimination = 1
-        bracket_double_elimination = 2
+        POOL = 0
+        BRACKET_SINGLE_ELIMINATION = 1
+        BRACKET_DOUBLE_ELIMINATION = 2
 
         @classmethod
         def is_valid_stage_ordering(cls, first, second):
@@ -297,7 +297,7 @@ class Stage(Base):
             it.
             """
             valid_orders = defaultdict(set)
-            valid_orders[cls.pool] = {cls.pool, cls.bracket_single_elimination, cls.bracket_double_elimination}
+            valid_orders[cls.POOL] = {cls.POOL, cls.BRACKET_SINGLE_ELIMINATION, cls.BRACKET_DOUBLE_ELIMINATION}
 
             return second in valid_orders[first]
 
@@ -305,7 +305,7 @@ class Stage(Base):
         def parse_params(cls, stage_type, params) -> Dict:
             parsed_params = {}
 
-            if stage_type == cls.pool:
+            if stage_type == cls.POOL:
                 parsed_params['minimum_pool_size'] = int(params.get('minimum_pool_size', 0))
             else:
                 parsed_params['seeded'] = bool(params.get('seeded', False))
@@ -313,16 +313,16 @@ class Stage(Base):
             return parsed_params
 
     class StageStatus(enum.IntEnum):
-        pending = 0
-        active = 1
-        complete = 2
+        PENDING = 0
+        ACTIVE = 1
+        COMPLETE = 2
 
     id = Column(Integer, primary_key=True, index=True)
     tournament_id = Column(Integer, ForeignKey('tournament.id', ondelete='CASCADE'), nullable=False)
     tournament = relationship('Tournament', back_populates='stages')
     ordinal = Column(Integer, nullable=False)
     type = Column(Integer, nullable=False)
-    status = Column(Integer, nullable=False, default=StageStatus.pending)
+    status = Column(Integer, nullable=False, default=StageStatus.PENDING)
     params = Column(JSON, nullable=False)
 
     pools = relationship('Pool', back_populates='stage', cascade='all, delete', passive_deletes=True,
@@ -394,11 +394,15 @@ class Stage(Base):
         """
         If there's a single match for this stage that isn't in status complete, return False, otherwise True
         """
+        num_matches = len([match for pool in self.pools for match in pool.matches])
+        if num_matches == 0:
+            raise TournamentError('Matches have not been generated yet for this stage')
+
         incomplete_matches = [
             match
             for pool in self.pools
             for match in pool.matches
-            if match.status != Match.MatchStatus.complete
+            if match.status != Match.MatchStatus.COMPLETE
         ]
         return len(incomplete_matches) == 0
 
@@ -408,14 +412,14 @@ class Stage(Base):
         If status is active, make sure all matches are complete and update status to complete
         Otherwise, raise TournamentError
         """
-        if self.status == Stage.StageStatus.pending:
+        if self.status == Stage.StageStatus.PENDING:
             # Generate pools and matches and update the status to active
-            self.generate_pools_and_matches()
-            self.status = Stage.StageStatus.active
-        elif self.status == Stage.StageStatus.active:
+            self._generate_pools_and_matches(db, autocommit=False)
+            self.status = Stage.StageStatus.ACTIVE
+        elif self.status == Stage.StageStatus.ACTIVE:
             # If all matches are complete, update status to complete, otherwise raise an error
             if self.all_matches_complete():
-                self.status = Stage.StageStatus.complete
+                self.status = Stage.StageStatus.COMPLETE
             else:
                 raise TournamentError('Cannot complete current stage; it still has pending matches')
         else:
@@ -426,7 +430,7 @@ class Stage(Base):
         if autocommit:
             db.commit()
 
-    def generate_pools_and_matches(self, db: Session, autocommit=True):
+    def _generate_pools_and_matches(self, db: Session, autocommit=True):
         from lib.match_generators.match_generator import MatchGenerator
         try:
             match_generator = MatchGenerator.get_match_generator(self)
@@ -454,15 +458,15 @@ class Match(Base):
     __tablename__ = 'match'
 
     class MatchStatus(enum.IntEnum):
-        pending = 0
-        active = 1
-        complete = 2
+        PENDING = 0
+        ACTIVE = 1
+        COMPLETE = 2
 
     id = Column(Integer, primary_key=True, index=True)
     pool_id = Column(Integer, ForeignKey('pool.id', ondelete='CASCADE'), nullable=False)
     pool = relationship('Pool', back_populates='matches')
     ordinal = Column(Integer, nullable=False)
-    status = Column(Integer, nullable=False, default=MatchStatus.pending)
+    status = Column(Integer, nullable=False, default=MatchStatus.PENDING)
 
     # The competitors could be populated at creation, or after the feeder matches complete
     competitor_1_id = Column(Integer, ForeignKey('competitor.id'), nullable=True)

@@ -13,7 +13,7 @@ class MatchGenerator(ABC):
         self._stage = stage
         self._match_ordinal = 0
 
-        if self._stage.status != Stage.StageStatus.pending:
+        if self._stage.status != Stage.StageStatus.PENDING:
             raise ValueError('Only stages in status = pending are allowed')
 
     @staticmethod
@@ -21,11 +21,11 @@ class MatchGenerator(ABC):
         """
         Returns an instance of the appropriate MatchGenerator sub-type for the given stage.
         """
-        if stage.type == Stage.StageType.pool:
+        if stage.type == Stage.StageType.POOL:
             return PoolMatchGenerator(stage)
-        elif stage.type == Stage.StageType.bracket_single_elimination:
+        elif stage.type == Stage.StageType.BRACKET_SINGLE_ELIMINATION:
             return SingleEliminationBracketMatchGenerator(stage)
-        elif stage.type == Stage.StageType.bracket_double_elimination:
+        elif stage.type == Stage.StageType.BRACKET_DOUBLE_ELIMINATION:
             return DoubleEliminationBracketMatchGenerator(stage)
         else:
             raise ValueError(f'No match generator configured for type {stage.type}')
